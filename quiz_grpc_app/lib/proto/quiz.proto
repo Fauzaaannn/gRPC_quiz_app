@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package quiz;
+
+// === Service utama ===
+service QuizService {
+  // --- Auth ---
+  rpc Register(User) returns (AuthResponse);
+  rpc Login(AuthRequest) returns (AuthResponse);
+
+  // --- Soal & Jawaban utama ---
+  rpc SendQuestion(QuestionRequest) returns (QuestionResponse);       // Dosen kirim soal (unary)
+  rpc ReceiveQuestion(Empty) returns (stream QuestionResponse);       // Mahasiswa terima soal (stream)
+  rpc SubmitAnswer(AnswerRequest) returns (Empty);                    // Mahasiswa kirim jawaban (unary)
+  rpc ReceiveAnswers(Empty) returns (stream AnswerResult);            // Dosen terima jawaban (stream)
+
+  // --- Statistik jawaban mahasiswa ---
+  rpc GetStudentScores(Empty) returns (stream StudentScore);          // Dosen ambil skor semua mahasiswa
+
+  // --- CRUD Soal oleh dosen ---
+  rpc CreateQuestion(Question) returns (Empty);
+  rpc GetAllQuestions(Empty) returns (QuestionList);
+  rpc UpdateQuestion(Question) returns (Empty);
+  rpc DeleteQuestion(Question) returns (Empty);
+}
+
+// === Messages ===
+
+// Soal & jawaban
+message QuestionRequest {
+  string questionId = 1;
+  string questionText = 2;
+  repeated string choices = 3;
+  string correctAnswer = 4; // hanya diketahui dosen
+}
+
+message QuestionResponse {
+  string questionId = 1;
+  string questionText = 2;
+  repeated string choices = 3;
+}
+
+message AnswerRequest {
+  string studentId = 1;
+  string questionId = 2;
+  string selectedAnswer = 3;
+}
+
+message AnswerResult {
+  string studentId = 1;
+  string questionId = 2;
+  bool isCorrect = 3;
+}
+
+// Auth
+message User {
+  string username = 1;
+  string password = 2;
+  string role = 3; // "student" atau "lecturer"
+  string studentId = 4; // optional, hanya digunakan jika role == mahasiswa 
+}
+
+message AuthRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthResponse {
+  bool success = 1;
+  string message = 2;
+  string role = 3;
+  string studentId = 4; // optional, hanya untuk mahasiswa
+}
+
+// Statistik skor mahasiswa
+message StudentScore {
+  string studentId = 1;
+  int32 correctCount = 2;
+  int32 wrongCount = 3;
+}
+
+message StudentListResponse {
+  repeated StudentScore students = 1;
+}
+
+// CRUD soal
+message Question {
+  string questionId = 1;
+  string questionText = 2;
+  repeated string choices = 3;
+  string correctAnswer = 4;
+}
+
+message QuestionList {
+  repeated Question questions = 1;
+}
+
+// Untuk void / tidak ada data
+message Empty {}
